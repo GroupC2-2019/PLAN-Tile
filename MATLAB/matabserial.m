@@ -5,7 +5,8 @@ i=1
 b=zeros(1,6); %initiate matrix
 
 fopen(s) %open serial port
-while 1
+%while 1
+for c=1:10
 out=fgetl(s)%read line X-RAW, Y-RAW, Z-RAW, x_accel, y_accel, z_accel
 pause(2);
 a=str2num(out);
