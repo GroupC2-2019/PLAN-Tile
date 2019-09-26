@@ -35,36 +35,42 @@ uint8_t ReadRegister(uint8_t reg)
 
 void CollectData()
 {
-   uint8_t OUT_X_L[10];
-   uint8_t OUT_X_H[10];
-   uint8_t OUT_X[10];
+   uint8_t OUT_X_L[1000];
+   uint8_t OUT_X_H[1000];
+   uint8_t OUT_X[1000];
    
-   uint8_t OUT_Y_L[10];
-   uint8_t OUT_Y_H[10];
-   uint8_t OUT_Y[10];
+   uint8_t OUT_Y_L[1000];
+   uint8_t OUT_Y_H[1000];
+   uint8_t OUT_Y[1000];
    
-   uint8_t OUT_Z_L[10];
-   uint8_t OUT_Z_H[10];
-   uint8_t OUT_Z[10];
+   uint8_t OUT_Z_L[1000];
+   uint8_t OUT_Z_H[1000];
+   uint8_t OUT_Z[1000];
 
-  uint8_t test_L=ReadRegister(OUT_Z_L_Reg);
-  uint8_t test_H=ReadRegister(OUT_Z_H_Reg);
-  uint8_t test=(test_H*256+test_L)/16;
- /* for(int i=0; i<100; i++)
+ for(int i=0; i<1000; i++)
   {
+    OUT_X_L[i]=ReadRegister(OUT_X_L_Reg);
+    //Serial.println(OUT_Z_L[i]);
+    OUT_X_H[i]=ReadRegister(OUT_X_H_Reg);
+    //Serial.println(OUT_Z_H[i]);
+    OUT_X[i]=(OUT_X_H[i]*256+OUT_X_L[i])/16;
+
+    OUT_Y_L[i]=ReadRegister(OUT_Y_L_Reg);
+    OUT_Y_H[i]=ReadRegister(OUT_Y_H_Reg);
+    OUT_Y[i]=(OUT_Y_H[i]*256+OUT_Y_L[i])/16;
+    
     OUT_Z_L[i]=ReadRegister(OUT_Z_L_Reg);
     OUT_Z_H[i]=ReadRegister(OUT_Z_H_Reg);
+    OUT_Z[i]=(OUT_Z_H[i]*256+OUT_Z_L[i])/16;   
   }
-  for(int j = 0; j<100; j++)
-  {
-    OUT_Z[j]=(OUT_Z_H[j]*256+OUT_Z_L[j])/16;
-    Serial.println(OUT_Z[100]);
-  }*/
   
-  //Serial.println(test_L);
-  //Serial.println(test_H);  
-  //Serial.println(test);
-  //delay(1000);
+  for(int j = 0; j<1000; j++)
+  {
+    Serial.println(OUT_Z[j]);
+    //Serial.println(OUT_Y[j]);
+    //Serial.println(OUT_Z[j]);
+  }
+
  }
 
 void setup() {
@@ -78,11 +84,8 @@ void setup() {
   WriteRegister(CTRL_REG5, 0);
   WriteRegister(CTRL_REG5, 0);
   //Serial.println(ReadRegister(CTRL_REG4));
-  
 }
 
 void loop() {
   CollectData();
-  //Serial.println(ReadRegister(OUT_Z_L_Reg));  
-
 }
