@@ -37,15 +37,15 @@ void CollectData()
 {
    uint8_t OUT_X_L[1000];
    uint8_t OUT_X_H[1000];
-   uint8_t OUT_X[1000];
+   uint16_t OUT_X[1000];
    
    uint8_t OUT_Y_L[1000];
    uint8_t OUT_Y_H[1000];
-   uint8_t OUT_Y[1000];
+   uint16_t OUT_Y[1000];
    
    uint8_t OUT_Z_L[1000];
    uint8_t OUT_Z_H[1000];
-   uint8_t OUT_Z[1000];
+   uint16_t OUT_Z[1000];
 
  for(int i=0; i<1000; i++)
   {
@@ -66,9 +66,9 @@ void CollectData()
   
   for(int j = 0; j<1000; j++)
   {
-    Serial.println(OUT_Z[j]);
+    //Serial.println(OUT_X[j]);
     //Serial.println(OUT_Y[j]);
-    //Serial.println(OUT_Z[j]);
+    Serial.println(OUT_Z[j]);
   }
 
  }
@@ -86,6 +86,31 @@ void setup() {
   //Serial.println(ReadRegister(CTRL_REG4));
 }
 
+void LIS3DH_read(uint16_t *x, uint16_t *y, uint16_t *z) {
+  Wire.beginTransmission(LIS3DH);
+  Wire.write(OUT_X_L_Reg | 0x80); // 0x80 for autoincrement
+  Wire.endTransmission();
+
+  Wire.requestFrom(LIS3DH, 6);
+  *x = Wire.read();
+  *x |= ((uint16_t)Wire.read()) << 8;
+  *y = Wire.read();
+  *y |= ((uint16_t)Wire.read()) << 8;
+  *z = Wire.read();
+  *z |= ((uint16_t)Wire.read()) << 8;
+}
+
 void loop() {
-  CollectData();
+  uint16_t x, y, z;
+  while(1) {
+    LIS3DH_read(&x, &y, &z);
+    Serial.print(x);
+    Serial.print(",");
+    Serial.print(y);
+    Serial.print(",");
+    Serial.print(z);
+    Serial.println();
+    delay(1);
+  }
+  //CollectData();
 }
