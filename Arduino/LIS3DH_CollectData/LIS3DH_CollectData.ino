@@ -86,31 +86,70 @@ void setup() {
   //Serial.println(ReadRegister(CTRL_REG4));
 }
 
-void LIS3DH_read(uint16_t *x, uint16_t *y, uint16_t *z) {
+void LIS3DH_read(int16_t *x, int16_t *y, int16_t *z) {
+  uint8_t lx, ly, lz;
+  int8_t hx, hy, hz;
+  
   Wire.beginTransmission(LIS3DH);
   Wire.write(OUT_X_L_Reg | 0x80); // 0x80 for autoincrement
   Wire.endTransmission();
 
   Wire.requestFrom(LIS3DH, 6);
-  *x = Wire.read();
-  *x |= ((uint16_t)Wire.read()) << 8;
-  *y = Wire.read();
-  *y |= ((uint16_t)Wire.read()) << 8;
-  *z = Wire.read();
-  *z |= ((uint16_t)Wire.read()) << 8;
+
+  lx = Wire.read();
+  hx = Wire.read();
+  ly = Wire.read();
+  hy = Wire.read();
+  lz = Wire.read();
+  hz = Wire.read();  
+
+  /*
+  tx = Wire.read();
+  tx |= ((uint16_t)Wire.read()) << 8;
+  ty = Wire.read();
+  ty |= ((uint16_t)Wire.read()) << 8;
+  tz = Wire.read();
+  tz |= ((uint16_t)Wire.read()) << 8;
+
+  tx &= 0xFFF;
+  ty &= 0xFFF;
+  tz &= 0xFFF;
+
+  *x = (int16_t)tx;  
+  *y = (int16_t)ty;  
+  *z = (int16_t)tz;*/
 }
 
 void loop() {
-  uint16_t x, y, z;
+  int16_t x, y, z;
+  uint8_t lx, ly, lz;
+  int8_t hx, hy, hz;
   while(1) {
-    LIS3DH_read(&x, &y, &z);
-    Serial.print(x);
+    Wire.beginTransmission(LIS3DH);
+    Wire.write(OUT_X_L_Reg | 0x80); // 0x80 for autoincrement
+    Wire.endTransmission();
+  
+    Wire.requestFrom(LIS3DH, 6);
+  
+    lx = Wire.read();
+    hx = Wire.read();
+    ly = Wire.read();
+    hy = Wire.read();
+    lz = Wire.read();
+    hz = Wire.read();
+    
+    Serial.print(lx);
     Serial.print(",");
-    Serial.print(y);
+    Serial.print(hx);
     Serial.print(",");
-    Serial.print(z);
+    Serial.print(ly);
+    Serial.print(",");
+    Serial.print(hy);
+    Serial.print(",");
+    Serial.print(lz);
+    Serial.print(",");
+    Serial.print(hz);
     Serial.println();
     delay(1);
   }
-  //CollectData();
 }
