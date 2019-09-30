@@ -1,7 +1,7 @@
 %if Com port open use fclose(instrfind()) in command window
 
 s = serial('COM3','BaudRate',9600,'Terminator','CR') %initiate connection
-b=zeros(1,3); %initiate matrix
+b=zeros(1,6); %initiate matrix
 
 fopen(s) %open serial port
 %while 1
@@ -12,34 +12,34 @@ b=[b;a];%cat serial output to matrix
 end
 fclose(s)
 
-x=b(:,1); %Assign first column of matrix to x
-xavg=(mean(reshape(x,10,[]),1)).' 
-% reshape vector to matrix, average every 10 values then transpose back to original form
+lx=b(:,1); %Assign first column of matrix to x
+hx=b(:,2); %Assign first column of matrix to x
 
-y=b(:,2);
-yavg=(mean(reshape(y,10,[]),1)).' 
 
-z=b(:,3);
-zavg=(mean(reshape(z,10,[]),1)).' 
+ly=b(:,3);
+hy=b(:,4);
+
+
+lz=b(:,5); 
+hz=b(:,6);
+
+OUT_X = (hx .* 2^4 + lx./16);
+OUT_Y = (hy .* 2^4 + ly./16);
+OUT_Z = (hz .* 2^4 + lz./16);
 
 figure('Name', 'XYZ Raw');
 subplot(3,1,1);
-plot(x);
+plot(OUT_X);
+ylim([-2048 2048]);
 title('X-axis Raw');
 subplot(3,1,2);
-plot(y);
+plot(OUT_Y);
+ylim([-2048 2048]);
 title('Y-axis Raw');
 subplot(3,1,3);
-plot(z);
+plot(OUT_Z);
+ylim([-2048 2048]);
 title('Z-axis Raw');
 
-figure('Name', 'XYZ Avg');
-subplot(3,1,1);
-plot(xavg);
-title('X-axis AVG');
-subplot(3,1,2);
-plot(yavg);
-title('Y-axis AVG');
-subplot(3,1,3);
-plot(zavg);
-title('Z-axis AVG');
+MAG =(OUT_X.^2 + OUT_Y.^2 + OUT_Z.^2).^(1/2);
+
