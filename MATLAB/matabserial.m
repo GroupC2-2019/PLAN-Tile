@@ -1,6 +1,6 @@
 %if Com port open use fclose(instrfind()) in command window
 
-s = serial('COM3','BaudRate',250000,'Terminator','CR') %initiate connection
+s = serial('COM3','BaudRate',230400,'Terminator','CR') %initiate connection
 b=zeros(1,3); %initiate matrix
 
 fopen(s) %open serial port
