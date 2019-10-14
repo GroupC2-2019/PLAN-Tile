@@ -1,4 +1,6 @@
-b = Walk1;
+%Walk_data=csvread('C:\Users\afriyie.k\Documents\PLAN-Tile\Data\Kennith_Plywood_BoatShoes\Walk_0.csv');
+
+b = Walk_data;
 
 OUT_X=b(:,1);
 OUT_Y=b(:,2);

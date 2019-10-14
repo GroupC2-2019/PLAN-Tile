@@ -1,9 +1,10 @@
 Fs = length(OUT_Z)/6;            % Sampling frequency                    
 T = 1/Fs;            % Sampling period       
+TempZ=b;
 L = length(TempZ);   % Length of signal
 t = (0:L-1)*T;       % Time vector
 
-Z_FFT = TempZ - Mean_Noise(3);
+Z_FFT = TempZ + Mean_Noise(3);
 
 Y = fft(Z_FFT);
 
