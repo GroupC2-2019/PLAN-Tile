@@ -1,6 +1,6 @@
 %if Com port open use fclose(instrfind()) in command window
 
-s = serial('COM3','BaudRate',230400,'Terminator','CR') %initiate connection
+s = serial('COM9','BaudRate',230400,'Terminator','CR') %initiate connection
 b=zeros(1,3); %initiate matrix
 
 fopen(s) %open serial port
@@ -10,7 +10,7 @@ disp("GO")
 
 tic
 
-for c=1:3000
+for c=1:500
     out=fgetl(s);%read line X-RAW, Y-RAW, Z-RAW
     a=str2num(out); %separates values by comma delimiter
     b=[b;a];%cat serial output to matrix
