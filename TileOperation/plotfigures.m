@@ -15,4 +15,5 @@ function plotfigures(in1, in2, in3, in4, fig_name)
     subplot(4,1,4);
     plot(in4);
     title('MAG');
+    ylim([-2048 2048]);
 end
