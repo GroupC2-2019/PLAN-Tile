@@ -1,6 +1,8 @@
 %if Com port open use fclose(instrfind()) in command window
+fclose(instrfind())
 
-arduino1 = serial('COM9','BaudRate',230400,'Terminator','CR') %initiate connection
+
+arduino1 = serial('COM10','BaudRate',230400,'Terminator','CR') %initiate connection
 %arduino2 = serial('COM3','BaudRate',230400,'Terminator','CR') 
 %arduino3 = serial('COM3','BaudRate',230400,'Terminator','CR') 
 
@@ -16,7 +18,7 @@ disp("GO")
 
 tic
 
-for c=1:500
+for c=1:3500
     line=fgetl(arduino1);%read line X-RAW, Y-RAW, Z-RAW
     str=str2num(line); %separates values by comma delimiter
     mat1=[mat1;str];%cat serial output to matrix
@@ -30,7 +32,8 @@ for c=1:500
 %     mat3=[mat3;str];
      
 end
-fprintf(arduino1, 1);% Write indicator to arduino
+
+fprintf(arduino1,0);% Write indicator to arduino
 
 fclose(arduino1);
 %fclose(arduino2);
@@ -54,7 +57,9 @@ MAG_1 =(OUT_X_1.^2 + OUT_Y_1.^2 + OUT_Z_1.^2).^(1/2);
 %MAG_2 =(OUT_X_2.^2 + OUT_Y_2.^2 + OUT_Z_2.^2).^(1/2);
 %MAG_3 =(OUT_X_3.^2 + OUT_Y_3.^2 + OUT_Z_3.^2).^(1/2);
 
-plotfigures(OUT_X_1,OUT_Y_1,OUT_Z_1, MAG_1)
+plotfigures(OUT_X_1,OUT_Y_1,OUT_Z_1, MAG_1, 'Arduino1')
+% plotfigures(OUT_X_1,OUT_Y_1,OUT_Z_1, MAG_1, 'Arduino2')
+% plotfigures(OUT_X_1,OUT_Y_1,OUT_Z_1, MAG_1, 'Arduino3')
 
 
 

@@ -1,5 +1,5 @@
-function plotfigures(in1, in2, in3, in4)
-    figure('Name', 'XYZ Raw and MAG');
+function plotfigures(in1, in2, in3, in4, fig_name)
+    figure('Name', fig_name);
     subplot(4,1,1);
     plot(in1);
     ylim([-2048 2048]);
