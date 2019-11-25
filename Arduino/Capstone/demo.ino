@@ -43,7 +43,7 @@ public:
   }
 
   void LED_frame(color c){
-    SPI.transfer(0xE0 & BRIGHTNESS);
+    SPI.transfer(0xFF);
     SPI.transfer(c.b);
     SPI.transfer(c.g);
     SPI.transfer(c.r);
@@ -77,8 +77,9 @@ public:
 
   void fill(color c) {
     uint8_t i, j;
-    for(i = 0; i < MATRIX_SIZE; i++) {
-      for(j = 0; j < MATRIX_SIZE; j++) {
+    clear_buffer();
+    for(i = 3; i < MATRIX_SIZE-3; i++) {
+      for(j = 3; j < MATRIX_SIZE-3; j++) {
         rgb[i][j] = c;
       }
     }
@@ -217,6 +218,8 @@ void setup() {
   
   Wire.begin();
 
+  SPI.begin();
+  
   // enable all axes, High res 1.3 KHz
   LIS3DH_write8(CTRL_REG1, 0x97);
 
@@ -231,8 +234,10 @@ void setup() {
 }
 
 void loop() {
-  test1();
-  //test2();
+  m.fill(color{255, 0, 255});
+  delay(1000); 
+  //test1();
+  test2();
 }
 
 color hsvToRgb(uint16_t h, uint8_t s, uint8_t v)
@@ -266,11 +271,19 @@ void test1() {
   while(1) {
     t = millis();    
     LIS3DH_read(&x, &y, &z);
+    Serial.println(mag);
     mag = (sqrt(x*x + y*y + z*z) - 1024) / 1048.0 * 255.0;
     if(mag > 255.0) mag = 255.0;
     else if(mag < 0) mag = 0;
-    c = {uint8_t(mag), 0, uint8_t(mag)};
-    m.fill(c);    
+//    c = {uint8_t(mag), 0, uint8_t(mag)};
+//    m.fill(c);    
+    if(mag > 0.1) {
+      float hue = float((mag - 0.1) / 0.9) * 360;
+      m.fill(hsvToRgb(hue, 255, 255));
+    } else {
+      m.fill(color{0, 0, 0});
+    }
+    
     while(millis() - t < 1);
   }
 }
@@ -288,6 +301,11 @@ void test2() {
     t = millis();
     
     LIS3DH_read(&x, &y, &z);
+    Serial.print(x);
+    Serial.print(", ");
+    Serial.print(y);
+    Serial.print(", ");
+    Serial.println(z);
     mag = sqrt(x*x + y*y + z*z) / 1024.0 - 1.0;
     if(mag < 0.0) mag = 0.0;    
     
@@ -297,7 +315,7 @@ void test2() {
       
       if(mag > max_mag) {
         max_mag = mag;
-        hue = float((mag - 0.1) / 0.9) * 360;
+        hue = float((mag - 0.1) / 0.9) * 250;
         m.fill(hsvToRgb(hue, 255, 255));
       }
     } else {
