@@ -1,7 +1,20 @@
 #include <SPI.h>
 #include <Wire.h>
 
+//#include <SD.h>
+
+//File myFile;
+
+#define LIS3DH_ADDRESS 0x18
+#define CTRL_REG1 0x20
+#define CTRL_REG2 0x21
+#define CTRL_REG3 0x22
+#define CTRL_REG4 0x23
+#define CTRL_REG5 0x24
+#define CTRL_REG6 0x25
+
 #define MATRIX_SIZE 7
+#define BRIGHTNESS 25
 
 struct color{
   uint8_t r, g, b;
@@ -30,7 +43,7 @@ public:
   }
 
   void LED_frame(color c){
-    SPI.transfer(0xFF);
+    SPI.transfer(234);
     SPI.transfer(c.b);
     SPI.transfer(c.g);
     SPI.transfer(c.r);
@@ -60,6 +73,17 @@ public:
       }
     }
     end_frame();
+  }
+
+  void fill(color c) {
+    uint8_t i, j;
+    clear_buffer();
+    for(i = 0; i < MATRIX_SIZE; i++) {
+      for(j = 0; j < MATRIX_SIZE; j++) {
+        rgb[i][j] = c;
+      }
+    }
+    write_buffer();
   }
 
   void arrow_north(color c) {
@@ -150,18 +174,6 @@ public:
     rgb[6][6] = c;    
   }
 
-  void line_(color c, uint8_t, t=1) {
-    int8_t i, j;
-    if(t > MATRIX_SIZE/2) {
-      t = 1;
-    }
-    for(i = 0; i < MATRIX_SIZE; i++) {
-      for(j = -t; j <= t; j++) {
-        rgb[i][j] = c;
-      }
-    }
-  }
-
   // Rotate: 0 = 0 degrees, 1 = 90 degrees, 2 = 180 degrees, 3 = 270 degrees - Clockwise
   void rotate_buffer(uint8_t dir) {
     if(dir == 0 || dir > 3) {
@@ -197,42 +209,181 @@ public:
     cross(c);
     write_buffer();
   }
-  
-  //dir = 0 - 7: 0 = 0 degrees, 1 = 45 degrees, ... , 7 = 315 degrees
-  void draw_line(uint8_t dir, uint8_t t, color c) {
-    if(dir % 2 == 0) {
-      line_north(c, t);      
-    } else {
-      line_northeast(c, t);
-    }
-    rotate_buffer(dir/2);
-    write_buffer();
-  }
 };
 
+led_matrix m;
+
 void setup() {
-  Serial.begin(9600);  
+  Serial.begin(230400);
+  
   Wire.begin();
+
   SPI.begin();
+  
+  // enable all axes, High res 1.3 KHz
+  LIS3DH_write8(CTRL_REG1, 0x97);
+
+  // High res & BDU enabled
+  LIS3DH_write8(CTRL_REG4, 0x88);
+
+  // DRDY on INT1
+  LIS3DH_write8(CTRL_REG3, 0x10);
+
+  // enable adcs
+  LIS3DH_write8(0x1F, 0x80);
+
+  cli();
+  TCCR1A = 0;// set entire TCCR1A register to 0
+  TCCR1B = 0;// same for TCCR1B
+  TCNT1  = 0;//initialize counter value to 0
+  // set compare match register for 1hz increments
+  OCR1A = 500;// = (16*10^6) / (1*1024) - 1 (must be <65536)
+  // turn on CTC mode
+  TCCR1B |= (1 << WGM12);
+  // Set CS10 and CS12 bits for 1024 prescaler
+  TCCR1B |= (1 << CS11) | (1 << CS10);  
+  // enable timer compare interrupt
+  TIMSK1 |= (1 << OCIE1A);
+  sei();
+}
+
+volatile float mag;
+
+ISR(TIMER1_COMPA_vect){
+  static float x, y, z;
+  LIS3DH_read(&x, &y, &z);
+  mag = sqrt(x*x + y*y + z*z);
+  Serial.println(mag);
 }
 
 void loop() {
-  int8_t i, j;
+  m.fill(color{0, 0, 0});
+  while(1);
+  m.fill(color{255, 0, 255});
+  delay(1000); 
+  //test1();
+  test2();
+}
 
-  led_matrix m;
+color hsvToRgb(uint16_t h, uint8_t s, uint8_t v)
+{
+    uint8_t f = (h % 60) * 255 / 60;
+    uint8_t p = (255 - s) * (uint16_t)v / 255;
+    uint8_t q = (255 - f * (uint16_t)s / 255) * (uint16_t)v / 255;
+    uint8_t t = (255 - (255 - f) * (uint16_t)s / 255) * (uint16_t)v / 255;
+    uint8_t r = 0, g = 0, b = 0;
+    switch((h / 60) % 6){
+        case 0: r = v; g = t; b = p; break;
+        case 1: r = q; g = v; b = p; break;
+        case 2: r = p; g = v; b = t; break;
+        case 3: r = p; g = q; b = v; break;
+        case 4: r = t; g = p; b = v; break;
+        case 5: r = v; g = p; b = q; break;
+    }
+    return color{r, g, b};
+}
+
+void test1() {
+  float x, y, z;
+  float max_mag, temp_mag;
+  int i;
+  bool hit = true;
+  int low_count, t;
+  color c;
+
+  uint16_t counter = 0;
   
-  m.draw_arrow(7, color{255,255,255});
-  m.draw_cross(color{255,255,255});
+  while(1) {
+    t = millis();
+    temp_mag = (mag - 1024) / 1048.0 * 255.0;
+    if(temp_mag > 255.0) temp_mag = 255.0;
+    else if(temp_mag < 0) temp_mag = 0;
+//    c = {uint8_t(temp_mag), 0, uint8_t(temp_mag)};
+//    m.fill(c);    
+    if(temp_mag > 0.1) {
+      float hue = float((temp_mag - 0.1) / 0.9) * 360;
+      m.fill(hsvToRgb(hue, 255, 255));
+    } else {
+      m.fill(color{0, 0, 0});
+    }
+    
+    while(millis() - t < 1);
+  }
+}
+
+void test2() {
+  float x, y, z;
+  float temp_mag, max_mag;
+  int i;
+  bool hit = true;
+  int low_count;
+  unsigned long t, tt, ttt;
+  uint16_t counter = 0, hue;
   
-  for(i = 0; i < MATRIX_SIZE; i++) { 
-    for(j = 0; j < MATRIX_SIZE; j++) { 
-      if(m.rgb[i][j].r != 0) {
-        Serial.print("* ");
-      } else {
-        Serial.print("_ ");
+  while(1) {
+    t = millis();
+    temp_mag = mag / 1024.0 - 1.0;
+    
+    if(temp_mag < 0.0) temp_mag = 0.0;    
+    
+    if(temp_mag > 0.1) {    
+      hit = true;
+      low_count = 0;
+      
+      if(temp_mag > max_mag) {
+        max_mag = temp_mag;
+        hue = float((temp_mag - 0.1) / 0.9) * 250;
+        m.fill(hsvToRgb(hue, 255, 255));
+      }
+    } else {
+      if(low_count++ > 10) {
+        if(hit) {
+          delay(1000);
+        }
+        hit = false;
+        max_mag = 0.0;    
+        m.fill(color{0, 0, 0}); 
       }
     }
-    Serial.println();
-  }  
-  while(1);
+    while(millis() - t < 2);
+  }
+}
+
+void LIS3DH_read(float *x, float *y, float *z) {
+  static const float scale = 1.0 / 16.0;//2.0 /32768.0;
+  
+  Wire.beginTransmission(LIS3DH_ADDRESS);
+  Wire.write(0x28 | 0x80);
+  Wire.endTransmission();
+
+  Wire.requestFrom(LIS3DH_ADDRESS, 6);
+
+  int16_t tx, ty, tz;
+
+  tx = Wire.read();
+  tx |= ((uint16_t)Wire.read()) << 8;
+  ty = Wire.read();
+  ty |= ((uint16_t)Wire.read()) << 8;
+  tz = Wire.read();
+  tz |= ((uint16_t)Wire.read()) << 8;
+
+  *x = float(tx) * scale;
+  *y = float(ty) * scale;
+  *z = float(tz) * scale;
+}
+
+void LIS3DH_write8(uint8_t reg, uint8_t value) {
+  Wire.beginTransmission(LIS3DH_ADDRESS);
+  Wire.write((uint8_t)reg);
+  Wire.write((uint8_t)value);
+  Wire.endTransmission();
+}
+
+uint8_t LIS3DH_read8(uint8_t reg) {
+  Wire.beginTransmission(LIS3DH_ADDRESS);
+  Wire.write((uint8_t)reg);
+  Wire.endTransmission();
+
+  Wire.requestFrom(LIS3DH_ADDRESS, 1);
+  return Wire.read();
 }
